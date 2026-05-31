@@ -1,33 +1,23 @@
-FROM alpine:latest AS builder
-
-RUN apk add --no-cache git go build-base gcc musl-dev
-
-WORKDIR /build
-
-# Клонируем репозиторий с явным указанием ветки main/master
-RUN git clone --depth 1 https://github.com/lampac-nextgen/lampac.git . || \
-    git clone --depth 1 https://github.com/lampac-nextgen/lampac.git .
-
-# Выводим список файлов для отладки
-RUN ls -la
-
-# Собираем с включёнными модулями и статической линковкой
-RUN go mod download && \
-    CGO_ENABLED=1 GOOS=linux go build -a -ldflags '-linkmode external -extldflags "-static"' -o lampac .
-
-# Проверяем, что бинарник создался
-RUN test -f lampac || (echo "Build failed" && exit 1)
-
 FROM alpine:latest
 
-RUN apk add --no-cache ca-certificates jq bash
+RUN apk add --no-cache ca-certificates jq bash curl
 
 WORKDIR /app
 
-COPY --from=builder /build/lampac /app/lampac
-COPY --from=builder /build/config /app/config.default
+# Скачиваем бинарник под вашу архитектуру
+RUN ARCH=$(uname -m) && \
+    case "$ARCH" in \
+        x86_64)  FILE="lampac-linux-amd64" ;; \
+        aarch64) FILE="lampac-linux-arm64" ;; \
+        armv7l)  FILE="lampac-linux-armv7" ;; \
+        *)       echo "Unsupported arch: $ARCH"; exit 1 ;; \
+    esac && \
+    curl -L "https://github.com/lampac-nextgen/lampac/releases/latest/download/${FILE}" -o lampac && \
+    chmod +x lampac
 
-RUN chmod +x /app/lampac
+# Скачиваем пример конфига
+RUN mkdir -p config.default && \
+    curl -L https://raw.githubusercontent.com/lampac-nextgen/lampac/master/config/init.conf -o config.default/init.conf
 
 COPY run.sh /run.sh
 RUN chmod a+x /run.sh
