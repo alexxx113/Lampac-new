@@ -1,5 +1,5 @@
 name: "Lampac"
-version: "1.0.10"
+version: "1.0.70"
 slug: "lampac"
 description: "Lampac – прокси-сервер для стриминга медиа"
 arch:
