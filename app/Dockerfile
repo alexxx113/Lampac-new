@@ -1,29 +1,19 @@
+FROM alpine:latest AS builder
+
+RUN apk add --no-cache git go build-base
+
+WORKDIR /build
+RUN git clone https://github.com/lampac-nextgen/lampac.git . && \
+    go mod download && \
+    CGO_ENABLED=0 GOOS=linux go build -o lampac .
+
 FROM alpine:latest
-
-RUN apk add --no-cache ca-certificates jq bash curl
-
+RUN apk add --no-cache ca-certificates jq bash
 WORKDIR /app
-
-# Скачиваем бинарник под вашу архитектуру
-RUN ARCH=$(uname -m) && \
-    case "$ARCH" in \
-        x86_64)  FILE="lampac-linux-amd64" ;; \
-        aarch64) FILE="lampac-linux-arm64" ;; \
-        armv7l)  FILE="lampac-linux-armv7" ;; \
-        *)       echo "Unsupported arch: $ARCH"; exit 1 ;; \
-    esac && \
-    curl -L "https://github.com/lampac-nextgen/lampac/releases/latest/download/${FILE}" -o lampac && \
-    chmod +x lampac
-
-# Скачиваем пример конфига
-RUN mkdir -p config.default && \
-    curl -L https://raw.githubusercontent.com/lampac-nextgen/lampac/master/config/init.conf -o config.default/init.conf
-
+COPY --from=builder /build/lampac /app/lampac
+COPY --from=builder /build/config /app/config.default
 COPY run.sh /run.sh
 RUN chmod a+x /run.sh
-
 VOLUME ["/data"]
-
 EXPOSE 8080
-
 CMD ["/run.sh"]
