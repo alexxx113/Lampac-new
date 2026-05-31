@@ -1,9 +1,15 @@
-#!/usr/bin/env bashio
+#!/bin/bash
 
 set -e
 
-ROOT_PASSWORD=$(bashio::config 'root_password')
-WEB_PORT=$(bashio::config 'web_port')
+# Читаем параметры из стандартного файла аддонов HA
+if [ -f /data/options.json ]; then
+    ROOT_PASSWORD=$(jq --raw-output '.root_password' /data/options.json)
+    WEB_PORT=$(jq --raw-output '.web_port' /data/options.json)
+else
+    echo "Ошибка: /data/options.json не найден"
+    exit 1
+fi
 
 mkdir -p /data/config /data/plugins
 
