@@ -1,7 +1,7 @@
-name: "Lampac"
-version: "1.0.70"
-slug: "lampac"
-description: "Lampac – прокси-сервер для стриминга медиа"
+name: "Lampac (NextGen)"
+version: "1.02.0"
+slug: "lampac_nextgen"
+description: "Lampac – прокси для видео, торрентов, IPTV и DLNA (docker-совместимый)"
 arch:
   - aarch64
   - amd64
@@ -12,15 +12,14 @@ startup: "application"
 boot: "auto"
 host_network: true
 ports:
-  8080/tcp: 8080
+  9118/tcp: 9118
 ports_description:
-  8080/tcp: "Веб-интерфейс"
-options:
-  root_password: "changeme"
-  web_port: 8080
-schema:
-  root_password: str
-  web_port: int(1,65535)
+  9118/tcp: "Веб-интерфейс"
 map:
   - "config:rw"
   - "share:rw"
+  - "media:rw"
+options:
+  root_password: "changeme"
+schema:
+  root_password: "str"
