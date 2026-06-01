@@ -1,7 +1,7 @@
 FROM ghcr.io/lampac-nextgen/lampac:latest
 
-COPY run.sh /run.sh
-RUN chmod +x /run.sh
+# Копируем скрипт и сразу устанавливаем права на выполнение
+COPY --chmod=755 run.sh /run.sh
 
 ENV ASPNETCORE_URLS=http://+:9118
 ENTRYPOINT ["/run.sh"]
