@@ -1,25 +1,10 @@
-ARG BUILD_FROM=ghcr.io/home-assistant/amd64-base:latest
-FROM $BUILD_FROM
+FROM alpine:latest
 
-# Устанавливаем .NET Runtime (Lampac нужен)
-RUN apk add --no-cache dotnet9-runtime icu-libs krb5-libs libgcc libintl libstdc++ zlib
+RUN apk add --no-cache curl jq dotnet9-runtime
 
-# Скачиваем готовый бинарник Lampac (последний релиз)
 WORKDIR /app
-RUN arch="$(uname -m)" && \
-    case "$arch" in \
-        x86_64)  url="https://github.com/lampac-nextgen/lampac/releases/latest/download/lampac-linux-x64" ;; \
-        aarch64) url="https://github.com/lampac-nextgen/lampac/releases/latest/download/lampac-linux-arm64" ;; \
-        *)       echo "Unsupported arch: $arch"; exit 1 ;; \
-    esac && \
-    wget -O lampac "$url" && \
-    chmod +x lampac
+RUN curl -L https://github.com/lampac-nextgen/lampac/archive/refs/heads/master.tar.gz | tar xz --strip-components=1
 
-# Копируем пример конфига
-RUN mkdir -p /app/config
-RUN wget -O /app/config/init.conf https://raw.githubusercontent.com/lampac-nextgen/lampac/master/config/example.init.conf
-
-# Скрипт запуска (без bashio – обычный sh)
 COPY run.sh /run.sh
 RUN chmod +x /run.sh
 
