@@ -1,26 +1,13 @@
-#!/bin/bash
+#!/bin/sh
 
-set -e
+CONFIG_DIR=/data/config
+mkdir -p $CONFIG_DIR
 
-CONFIG_DIR="/data/config"
-mkdir -p "$CONFIG_DIR"
-
-# Копируем конфиг, если его нет
-if [ ! -f "$CONFIG_DIR/init.conf" ]; then
-    cp /app/config/init.conf "$CONFIG_DIR/init.conf"
+if [ ! -f $CONFIG_DIR/init.conf ]; then
+    cp /app/config/example.init.conf $CONFIG_DIR/init.conf
 fi
 
-# Читаем пароль из файла options.json, который создаёт Supervisor
-if [ -f /data/options.json ]; then
-    ROOT_PASSWORD=$(jq --raw-output '.root_password' /data/options.json)
-else
-    echo "No options.json, using default"
-    ROOT_PASSWORD="changeme"
-fi
+ROOT_PASSWORD=$(jq -r '.root_password' /data/options.json 2>/dev/null || echo "changeme")
+sed -i "s/^password:.*/password: $ROOT_PASSWORD/" $CONFIG_DIR/init.conf
 
-# Обновляем пароль в конфиге
-sed -i "s/^password:.*/password: ${ROOT_PASSWORD}/" "$CONFIG_DIR/init.conf"
-echo -n "$ROOT_PASSWORD" > "$CONFIG_DIR/passwd"
-
-# Запускаем Lampac
-exec /app/lampac -config "$CONFIG_DIR/init.conf"
+exec dotnet /app/Lampac.dll --config=$CONFIG_DIR/init.conf
