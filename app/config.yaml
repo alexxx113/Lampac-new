@@ -1,6 +1,6 @@
-name: "Lampac"
-description: "My first real add-on!"
-version: "1.0.0"
+name: "LampacNew"
+description: "My 2 real add-on!"
+version: "2.0.0"
 slug: "lampac_hass"
 advanced: true
 arch:
