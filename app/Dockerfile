@@ -15,12 +15,12 @@ RUN curl -fSL -k -o dotnet.tar.gz https://dotnetcli.azureedge.net/dotnet/aspnetc
     && tar -oxzf dotnet.tar.gz -C /usr/share/dotnet \
     && rm dotnet.tar.gz
 
-RUN curl -L -k -o publish.zip https://github.com/immisterio/Lampac/releases/latest/download/publish.zip \
+RUN curl -L -k -o publish.zip https://github.com/lampac-nextgen/Lampac/releases/latest/download/lampac-nextgen.zip \
     && unzip -o publish.zip && rm -f publish.zip && rm -rf merchant \
     && rm -rf runtimes/os* && rm -rf runtimes/win* && rm -rf runtimes/linux-arm runtimes/linux-arm64 runtimes/linux-musl-arm64 runtimes/linux-musl-x64 \
     && touch isdocker && sed -i 's/\"System.GC.Server\"\: false/\"System.GC.Server\": true/g' Lampac.runtimeconfig.json
 	
-RUN curl -L -k -o minor.zip https://github.com/immisterio/Lampac/releases/latest/download/minor.zip && unzip -o minor.zip && rm -f minor.zip
+RUN curl -L -k -o minor.zip https://github.com/lampac-nextgen/Lampac/releases/latest/download/lampac-nextgen.zip && unzip -o lampac-nextgen.zip && rm -f lampac-nextgen.zip
 
 #RUN mkdir -p torrserver && curl -L -k -o torrserver/TorrServer-linux https://github.com/YouROK/TorrServer/releases/latest/download/TorrServer-linux-amd64 \
 #    && chmod +x torrserver/TorrServer-linux
