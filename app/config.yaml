@@ -1,13 +1,9 @@
-name: "Lampac NextGen"
-version: "1.0.30"
-slug: "lampac_nextgen"
-description: "Lampac — прокси-сервер для стриминга"
+name: "Lampac"
+version: "15.0.0"
+slug: "lampac"
 arch:
   - aarch64
   - amd64
-  - armhf
-  - armv7
-  - i386
 host_network: true
 ports:
   9118/tcp: 9118
@@ -15,5 +11,3 @@ options:
   root_password: "changeme"
 schema:
   root_password: "str"
-map:
-  - "config:rw"
