@@ -1,6 +1,6 @@
-name: "Lampac"
+name: "LampacNew"
 version: "15.0.0"
-slug: "lampac"
+slug: "lampacNew"
 arch:
   - aarch64
   - amd64
