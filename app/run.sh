@@ -1,59 +1,29 @@
 #!/usr/bin/env bashio
 
-set -e
+CONFIG_DIR="/data/config"
+INIT_CONF="$CONFIG_DIR/init.conf"
+PASSWD_FILE="$CONFIG_DIR/passwd"
 
-# Конфигурация
-LAMPAC_DIR="/lampac"
-DATA_CONFIG_DIR="/data/config"
+# Создаем каталог для конфигурации, если он не существует
+mkdir -p "$CONFIG_DIR"
 
-bashio::log.info "Preparing Lampac environment..."
-
-# Создаём папку для конфигов в томе /data
-mkdir -p "${DATA_CONFIG_DIR}"
-
-# Если в томе /data нет init.conf, копируем дефолтный из образа
-if [ ! -f "${DATA_CONFIG_DIR}/init.conf" ]; then
-    bashio::log.info "No user config found, copying default init.conf"
-    cp "${LAMPAC_DIR}/config/example.init.conf" "${DATA_CONFIG_DIR}/init.conf"
+# Копируем пример конфигурации, если пользовательского файла еще нет
+if [ ! -f "$INIT_CONF" ]; then
+    cp /app/config/example.init.conf "$INIT_CONF"
+    bashio::log.info "Пример конфигурации скопирован в $INIT_CONF. Пожалуйста, отредактируйте его при необходимости."
 fi
 
-# Если в томе /data нет passwd, создаём пустой (будет перезаписан паролем)
-if [ ! -f "${DATA_CONFIG_DIR}/passwd" ]; then
-    touch "${DATA_CONFIG_DIR}/passwd"
-fi
-
-# Копируем конфиги из /data/config в /lampac (как при монтировании тома в оригинальном docker-compose)
-cp "${DATA_CONFIG_DIR}/init.conf" "${LAMPAC_DIR}/init.conf"
-cp "${DATA_CONFIG_DIR}/passwd" "${LAMPAC_DIR}/passwd"
-
-# Устанавливаем пароль из опции аддона
+# Проверяем и устанавливаем пароль из UI
 ROOT_PASSWORD=$(bashio::config 'root_password')
-bashio::log.info "Setting root password in init.conf and passwd"
-
-# Обновляем пароль в init.conf (ищем строку password:)
-if grep -q "^password:" "${LAMPAC_DIR}/init.conf"; then
-    sed -i "s/^password:.*/password: ${ROOT_PASSWORD}/" "${LAMPAC_DIR}/init.conf"
+if ! grep -q "^password:" "$INIT_CONF"; then
+    echo "password: $ROOT_PASSWORD" >> "$INIT_CONF"
 else
-    echo "password: ${ROOT_PASSWORD}" >> "${LAMPAC_DIR}/init.conf"
+    sed -i "s/^password:.*/password: $ROOT_PASSWORD/" "$INIT_CONF"
 fi
 
-# Записываем пароль в passwd (как в инструкции printf)
-echo -n "${ROOT_PASSWORD}" > "${LAMPAC_DIR}/passwd"
+# Сохраняем пароль в отдельный файл
+echo -n "$ROOT_PASSWORD" > "$PASSWD_FILE"
 
-# Возвращаем обратно в /data/config, чтобы изменения сохранились
-cp "${LAMPAC_DIR}/init.conf" "${DATA_CONFIG_DIR}/init.conf"
-cp "${LAMPAC_DIR}/passwd" "${DATA_CONFIG_DIR}/passwd"
-
-bashio::log.info "Starting Lampac daemon..."
-
-# Запуск – в зависимости от содержимого образа:
-# Если использовался готовый образ lampac-nextgen/lampac, то исполняемый файл может называться lampac или Lampac.dll
-# Проверяем наличие
-if [ -f "${LAMPAC_DIR}/lampac" ]; then
-    exec "${LAMPAC_DIR}/lampac" -config "${LAMPAC_DIR}/init.conf"
-elif [ -f "${LAMPAC_DIR}/Lampac.dll" ]; then
-    exec dotnet "${LAMPAC_DIR}/Lampac.dll" --config="${LAMPAC_DIR}/init.conf"
-else
-    bashio::log.error "No executable found in /lampac"
-    exit 1
-fi
+# Запускаем приложение
+bashio::log.info "Запуск Lampac..."
+exec dotnet /app/Lampac.dll
