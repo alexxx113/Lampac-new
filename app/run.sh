@@ -1,29 +1,26 @@
-#!/usr/bin/env bashio
+#!/bin/bash
+
+set -e
 
 CONFIG_DIR="/data/config"
-INIT_CONF="$CONFIG_DIR/init.conf"
-PASSWD_FILE="$CONFIG_DIR/passwd"
-
-# Создаем каталог для конфигурации, если он не существует
 mkdir -p "$CONFIG_DIR"
 
-# Копируем пример конфигурации, если пользовательского файла еще нет
-if [ ! -f "$INIT_CONF" ]; then
-    cp /app/config/example.init.conf "$INIT_CONF"
-    bashio::log.info "Пример конфигурации скопирован в $INIT_CONF. Пожалуйста, отредактируйте его при необходимости."
+# Копируем конфиг, если его нет
+if [ ! -f "$CONFIG_DIR/init.conf" ]; then
+    cp /app/config/init.conf "$CONFIG_DIR/init.conf"
 fi
 
-# Проверяем и устанавливаем пароль из UI
-ROOT_PASSWORD=$(bashio::config 'root_password')
-if ! grep -q "^password:" "$INIT_CONF"; then
-    echo "password: $ROOT_PASSWORD" >> "$INIT_CONF"
+# Читаем пароль из файла options.json, который создаёт Supervisor
+if [ -f /data/options.json ]; then
+    ROOT_PASSWORD=$(jq --raw-output '.root_password' /data/options.json)
 else
-    sed -i "s/^password:.*/password: $ROOT_PASSWORD/" "$INIT_CONF"
+    echo "No options.json, using default"
+    ROOT_PASSWORD="changeme"
 fi
 
-# Сохраняем пароль в отдельный файл
-echo -n "$ROOT_PASSWORD" > "$PASSWD_FILE"
+# Обновляем пароль в конфиге
+sed -i "s/^password:.*/password: ${ROOT_PASSWORD}/" "$CONFIG_DIR/init.conf"
+echo -n "$ROOT_PASSWORD" > "$CONFIG_DIR/passwd"
 
-# Запускаем приложение
-bashio::log.info "Запуск Lampac..."
-exec dotnet /app/Lampac.dll
+# Запускаем Lampac
+exec /app/lampac -config "$CONFIG_DIR/init.conf"
